@@ -1,7 +1,8 @@
 {
   "image": "mcr.microsoft.com/devcontainers/rust:latest",
   "features": {
-    "ghcr.io/olivierlemasle/devcontainers-features/node:latest": {},
+    "ghcr.io/devcontainers/features/desktop-lite:latest": {},
+    "ghcr.io/devcontainers/features/node:2.1.0": {},
     "ghcr.io/olivierlemasle/devcontainers-features/tauri:latest": {}
   }
 }
