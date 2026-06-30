@@ -1,6 +1,7 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "image": "mcr.microsoft.com/devcontainers/rust:latest",
   "features": {
-    "ghcr.io/olivierlemasle/devcontainers-features/tauri:1": {"version": "latest",}
+    "ghcr.io/olivierlemasle/devcontainers-features/node:latest": {},
+    "ghcr.io/olivierlemasle/devcontainers-features/tauri:latest": {}
   }
 }
