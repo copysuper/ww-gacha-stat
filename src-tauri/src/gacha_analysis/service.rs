@@ -237,15 +237,7 @@ mod tests {
 
     fn default_base_ssr_ids() -> HashSet<String> {
         [
-            "1104",
-            "1203",
-            "1301",
-            "1503",
-            "1405",
-            "21010015",
-            "21020015",
-            "21030015",
-            "21040015",
+            "1104", "1203", "1301", "1503", "1405", "21010015", "21020015", "21030015", "21040015",
             "21050015",
         ]
         .into_iter()
@@ -297,9 +289,15 @@ mod tests {
         assert_rate_close(role_event.r.rate, 3.0 / 8.0);
         assert_eq!(role_event.ssr_event_count, 0);
         assert_eq!(role_event.ssr_permanent_count, 3);
-        assert_eq!(role_event.latest_ssr.as_ref().map(|hit| hit.name.as_str()), Some("浩境粼光"));
+        assert_eq!(
+            role_event.latest_ssr.as_ref().map(|hit| hit.name.as_str()),
+            Some("浩境粼光")
+        );
         assert_eq!(role_event.latest_ssr.as_ref().map(|hit| hit.count), Some(3));
-        assert_eq!(role_event.latest_sr.as_ref().map(|hit| hit.name.as_str()), Some("散华"));
+        assert_eq!(
+            role_event.latest_sr.as_ref().map(|hit| hit.name.as_str()),
+            Some("散华")
+        );
 
         let weapon_event = summary_list
             .iter()
@@ -316,7 +314,13 @@ mod tests {
         assert_eq!(weapon_event.r.count, 1);
         assert_eq!(weapon_event.ssr_event_count, 0);
         assert_eq!(weapon_event.ssr_permanent_count, 1);
-        assert_eq!(weapon_event.latest_ssr.as_ref().map(|hit| hit.name.as_str()), Some("停驻之烟"));
+        assert_eq!(
+            weapon_event
+                .latest_ssr
+                .as_ref()
+                .map(|hit| hit.name.as_str()),
+            Some("停驻之烟")
+        );
 
         for pool_name in ["角色常驻唤取", "武器常驻唤取"] {
             let empty_pool = summary_list
@@ -390,13 +394,18 @@ mod tests {
         assert_eq!(summary.ssr.max, 3);
         assert_eq!(summary.ssr_event_count, 1);
         assert_eq!(summary.ssr_permanent_count, 0);
-        assert_eq!(summary.latest_ssr.as_ref().map(|hit| hit.name.as_str()), Some("今汐"));
+        assert_eq!(
+            summary.latest_ssr.as_ref().map(|hit| hit.name.as_str()),
+            Some("今汐")
+        );
         assert_eq!(summary.latest_ssr.as_ref().map(|hit| hit.count), Some(3));
     }
 
     #[test]
     fn skip_first_ssr_pool_should_drop_oldest_ssr_segment() {
-        let pool_file = parse_pool_file(include_str!("../../../doc/examples/skip-first-ssr-pool.json"));
+        let pool_file = parse_pool_file(include_str!(
+            "../../../doc/examples/skip-first-ssr-pool.json"
+        ));
         let analysis_list = analyze_pool_file(&pool_file, true, &default_base_ssr_ids());
         let summary = build_pool_analysis_summaries(&analysis_list)
             .into_iter()
@@ -411,7 +420,10 @@ mod tests {
         assert_eq!(summary.ssr.current_pity, 0);
         assert_eq!(summary.ssr.avg, 3.0);
         assert_eq!(summary.ssr_event_count, 1);
-        assert_eq!(summary.latest_ssr.as_ref().map(|hit| hit.name.as_str()), Some("忌炎"));
+        assert_eq!(
+            summary.latest_ssr.as_ref().map(|hit| hit.name.as_str()),
+            Some("忌炎")
+        );
         assert_eq!(summary.sr.count, 1);
         assert_eq!(summary.sr.current_pity, 0);
         assert_eq!(summary.sr.avg, 2.0);
