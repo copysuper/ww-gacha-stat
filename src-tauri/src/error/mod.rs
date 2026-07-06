@@ -12,4 +12,7 @@ pub enum AppError {
 
     #[error("路径解析失败: {0}")]
     PathResolve(String),
+
+    #[error("参数校验失败: {0}")]
+    Validation(String),
 }

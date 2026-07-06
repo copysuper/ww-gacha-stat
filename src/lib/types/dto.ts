@@ -25,6 +25,70 @@ export interface AppConfigState {
   resolvedAssetsDir: string;
 }
 
+export interface HitData {
+  id: number;
+  name: string;
+  count: number;
+  event: boolean;
+  date: string;
+}
+
+export interface PoolRankSummary {
+  count: number;
+  rate: number;
+  avg: number;
+  min: number;
+  max: number;
+  currentPity: number;
+}
+
+export interface PoolAnalysisSummary {
+  poolName: string;
+  isEmpty: boolean;
+  totalCount: number;
+  startDate: string | null;
+  endDate: string | null;
+  ssr: PoolRankSummary;
+  sr: PoolRankSummary;
+  r: PoolRankSummary;
+  ssrEventCount: number;
+  ssrPermanentCount: number;
+  latestSsr: HitData | null;
+  latestSr: HitData | null;
+}
+
+export interface AnalysisData {
+  isEmpty: boolean;
+  poolName: string;
+  totalCount: number;
+  noUpSsrCount: number;
+  noUpSrCount: number;
+  noUpRCount: number;
+  ssrCount: number;
+  srCount: number;
+  rCount: number;
+  ssrAvg: number;
+  ssrMin: number;
+  ssrMax: number;
+  srAvg: number;
+  srMin: number;
+  srMax: number;
+  rAvg: number;
+  rMin: number;
+  rMax: number;
+  startDate: string | null;
+  endDate: string | null;
+  ssrDataList: HitData[];
+  srDataList: HitData[];
+  rDataList: HitData[];
+}
+
+export interface AnalyzeLocalPoolResponse {
+  filePath: string;
+  analysisList: AnalysisData[];
+  summaryList: PoolAnalysisSummary[];
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T | null;

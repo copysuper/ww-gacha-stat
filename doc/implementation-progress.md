@@ -13,10 +13,10 @@
 
 ## 1. 当前阶段
 
-当前处于：**第 1 阶段已完成，第 2 阶段待开始**
+当前处于：**第 2 阶段已完成**
 
 - 第 1 阶段：基础设施搭建 ✅
-- 第 2 阶段：离线抽卡分析核心 ⏳
+- 第 2 阶段：离线抽卡分析核心 ✅
 
 ---
 
@@ -95,9 +95,9 @@ src/
 - `gacha_log`
 - `gacha_params`
 - `gacha_api`
-- `gacha_storage`
+- `gacha_storage`（已完成最小读取能力）
 - `gacha_merge`
-- `gacha_analysis`
+- `gacha_analysis`（已完成最小分析能力）
 - `resource_sync`
 
 ### 3.2 当前还**没有**实现的业务能力
@@ -107,9 +107,9 @@ src/
 - 从游戏日志提取抽卡 URL
 - 手动输入 URL 解析
 - 官方抽卡接口请求
-- 抽卡记录本地持久化
+- 抽卡记录本地持久化（完整版本尚未开始）
 - 新旧记录合并
-- 离线抽卡分析
+- 离线抽卡分析（核心已完成；后续仅在第 3 阶段后按需要迭代）
 - 图片资源同步
 - 真实设置页表单
 
@@ -117,7 +117,7 @@ src/
 
 ## 4. 下一步唯一优先目标
 
-下一步进入：**第 2 阶段：离线抽卡分析核心**
+下一步进入：**第 3 阶段：新旧数据合并与本地持久化完整链路**
 
 ### 4.1 下一步建议严格顺序
 
@@ -139,6 +139,26 @@ src/
    - 从本地 `pool.json` 读取
    - 输出 `AnalysisData`
 6. 前端新增一个调试展示区，用于显示离线分析结果
+
+### 4.1 当前已完成到哪一步
+
+已完成：
+
+- `gacha_analysis` 模块骨架
+- `GachaRecord` / `PoolFile` / `AnalysisData` / `HitData` 定义
+- 本地 `pool.json` 读取
+- 离线分析主链路：`pool.json -> AnalysisData[]`
+- Tauri command：`analyze_local_pool`
+- 分析总览映射层：`PoolAnalysisSummary` / `PoolRankSummary`
+- 前端第 2 阶段调试区
+- 示例数据文件：`doc/examples/sample-pool.json`
+- 边界示例数据：`empty-pool.json` / `only-r-pool.json` / `single-ssr-pool.json` / `skip-first-ssr-pool.json`
+
+当前下一步建议：
+
+1. 开始实现 `gacha_merge`
+2. 补本地 `pool.json` 完整持久化写入能力
+3. 接入新旧记录去重、合并、排序
 
 ### 4.2 当前阶段不要做的事
 
@@ -184,6 +204,28 @@ src/
 
 - `cargo check --manifest-path src-tauri/Cargo.toml` ✅
 
+### 第 2 阶段最小链路
+
+- `sample-pool.json -> analyze_local_pool -> 首页调试展示` ✅
+
+### 第 2 阶段收尾新增
+
+- `analyze_local_pool` 已返回 `analysisList + summaryList` ✅
+- 首页已优先展示 `summaryList`，原始 `ssrDataList` 保留为调试视图 ✅
+
+### 第 2 阶段样例验证清单
+
+- `sample-pool.json`：验证多卡池、5/4/3 星统计、pity、最近命中、常驻/限定判断 ✅
+- `empty-pool.json`：验证全空卡池零值摘要与空时间范围 ✅
+- `only-r-pool.json`：验证仅 3 星时 5/4 星为空且 pity 正确回落到总抽数 ✅
+- `single-ssr-pool.json`：验证单 5 星时 `avg = min = max` 且限定判断正确 ✅
+- `skip-first-ssr-pool.json`：验证 `skipFirstSSR = true` 时最老 5 星片段被正确裁剪 ✅
+
+### 第 2 阶段自动化验证
+
+- 已新增 5 个 Rust 单元测试覆盖上述样例 ✅
+- `cargo test --manifest-path src-tauri/Cargo.toml gacha_analysis::service::tests -- --nocapture` ✅
+
 ---
 
 ## 7. 已知约束与注意事项
@@ -206,4 +248,4 @@ src/
 ## 8. 最后更新时间
 
 - 日期：2026-07-06
-- 状态：第 1 阶段完成，第 2 阶段待开始
+- 状态：第 2 阶段已完成，已具备离线分析、总览映射与样例验证能力

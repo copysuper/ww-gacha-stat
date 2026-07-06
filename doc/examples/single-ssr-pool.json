@@ -1,0 +1,31 @@
+{
+  "角色活动唤取": [
+    {
+      "cardPoolType": "2",
+      "resourceId": 220001,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "今汐",
+      "count": 1,
+      "time": "2024-07-03 10:00:00"
+    },
+    {
+      "cardPoolType": "2",
+      "resourceId": 3001,
+      "qualityLevel": 3,
+      "resourceType": "武器",
+      "name": "训练短刃",
+      "count": 1,
+      "time": "2024-07-03 09:59:00"
+    },
+    {
+      "cardPoolType": "2",
+      "resourceId": 3002,
+      "qualityLevel": 3,
+      "resourceType": "武器",
+      "name": "旧式佩枪",
+      "count": 1,
+      "time": "2024-07-03 09:58:00"
+    }
+  ]
+}

@@ -2,6 +2,8 @@ mod app_paths;
 mod commands;
 mod config;
 mod error;
+mod gacha_analysis;
+mod gacha_storage;
 
 use tracing_subscriber::{fmt, EnvFilter};
 
@@ -12,6 +14,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            commands::gacha::analyze_local_pool,
             commands::settings::get_app_config,
             commands::settings::update_app_config,
         ])

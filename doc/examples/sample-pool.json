@@ -1,0 +1,107 @@
+{
+  "角色活动唤取": [
+    {
+      "cardPoolType": "1",
+      "resourceId": 1502,
+      "qualityLevel": 4,
+      "resourceType": "角色",
+      "name": "散华",
+      "count": 1,
+      "time": "2026-07-06 21:05:00"
+    },
+    {
+      "cardPoolType": "1",
+      "resourceId": 1601,
+      "qualityLevel": 3,
+      "resourceType": "武器",
+      "name": "训练长刃",
+      "count": 1,
+      "time": "2026-07-06 21:04:00"
+    },
+    {
+      "cardPoolType": "1",
+      "resourceId": 21010015,
+      "qualityLevel": 5,
+      "resourceType": "武器",
+      "name": "浩境粼光",
+      "count": 1,
+      "time": "2026-07-06 21:03:00"
+    },
+    {
+      "cardPoolType": "1",
+      "resourceId": 1305,
+      "qualityLevel": 4,
+      "resourceType": "角色",
+      "name": "秋水",
+      "count": 1,
+      "time": "2026-07-06 21:02:00"
+    },
+    {
+      "cardPoolType": "1",
+      "resourceId": 1602,
+      "qualityLevel": 3,
+      "resourceType": "武器",
+      "name": "训练迅刀",
+      "count": 1,
+      "time": "2026-07-06 21:01:00"
+    },
+    {
+      "cardPoolType": "1",
+      "resourceId": 1104,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "忌炎",
+      "count": 1,
+      "time": "2026-07-06 21:00:00"
+    },
+    {
+      "cardPoolType": "1",
+      "resourceId": 1603,
+      "qualityLevel": 3,
+      "resourceType": "武器",
+      "name": "训练佩枪",
+      "count": 1,
+      "time": "2026-07-06 20:59:00"
+    },
+    {
+      "cardPoolType": "1",
+      "resourceId": 1203,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "卡卡罗",
+      "count": 1,
+      "time": "2026-07-06 20:58:00"
+    }
+  ],
+  "武器活动唤取": [
+    {
+      "cardPoolType": "2",
+      "resourceId": 21020015,
+      "qualityLevel": 5,
+      "resourceType": "武器",
+      "name": "停驻之烟",
+      "count": 1,
+      "time": "2026-07-05 18:02:00"
+    },
+    {
+      "cardPoolType": "2",
+      "resourceId": 2201,
+      "qualityLevel": 4,
+      "resourceType": "武器",
+      "name": "奔雷",
+      "count": 1,
+      "time": "2026-07-05 18:01:00"
+    },
+    {
+      "cardPoolType": "2",
+      "resourceId": 2202,
+      "qualityLevel": 3,
+      "resourceType": "武器",
+      "name": "戍关佩枪·平云",
+      "count": 1,
+      "time": "2026-07-05 18:00:00"
+    }
+  ],
+  "角色常驻唤取": [],
+  "武器常驻唤取": []
+}

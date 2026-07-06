@@ -1,3 +1,4 @@
+pub mod gacha;
 pub mod settings;
 
 use serde::Serialize;

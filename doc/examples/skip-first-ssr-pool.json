@@ -1,0 +1,58 @@
+{
+  "角色活动唤取": [
+    {
+      "cardPoolType": "2",
+      "resourceId": 220101,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "忌炎",
+      "count": 1,
+      "time": "2024-07-05 18:00:00"
+    },
+    {
+      "cardPoolType": "2",
+      "resourceId": 4101,
+      "qualityLevel": 4,
+      "resourceType": "角色",
+      "name": "炽霞",
+      "count": 1,
+      "time": "2024-07-05 17:59:00"
+    },
+    {
+      "cardPoolType": "2",
+      "resourceId": 3001,
+      "qualityLevel": 3,
+      "resourceType": "武器",
+      "name": "训练短刃",
+      "count": 1,
+      "time": "2024-07-05 17:58:00"
+    },
+    {
+      "cardPoolType": "2",
+      "resourceId": 1301,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "卡卡罗",
+      "count": 1,
+      "time": "2024-07-05 17:57:00"
+    },
+    {
+      "cardPoolType": "2",
+      "resourceId": 3002,
+      "qualityLevel": 3,
+      "resourceType": "武器",
+      "name": "旧式佩枪",
+      "count": 1,
+      "time": "2024-07-05 17:56:00"
+    },
+    {
+      "cardPoolType": "2",
+      "resourceId": 3003,
+      "qualityLevel": 3,
+      "resourceType": "武器",
+      "name": "实训臂铠",
+      "count": 1,
+      "time": "2024-07-05 17:55:00"
+    }
+  ]
+}
