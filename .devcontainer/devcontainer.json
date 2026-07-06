@@ -1,8 +1,26 @@
 {
   "image": "mcr.microsoft.com/devcontainers/rust:latest",
   "features": {
-    "ghcr.io/devcontainers/features/desktop-lite:latest": {},
+    "ghcr.io/devcontainers/features/desktop-lite:latest": {
+      "version": "latest",
+			"noVncVersion": "1.2.0",
+			"password": "vscode",
+			"webPort": "6080",
+			"vncPort": "5901"
+    },
     "ghcr.io/devcontainers/features/node:2.1.0": {},
     "ghcr.io/olivierlemasle/devcontainers-features/tauri:latest": {}
-  }
+  },
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [6080, 5901],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "bash ./.devcontainer/postCreateCommand.sh",
+
+	// Configure tool-specific properties.
+	// "customizations": {},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	"remoteUser": "root"
 }
