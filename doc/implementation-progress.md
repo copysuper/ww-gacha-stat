@@ -18,7 +18,7 @@
 - 第 1 阶段：基础设施搭建 ✅
 - 第 2 阶段：离线抽卡分析核心 ✅
 - 第 3 阶段：新旧数据合并与本地持久化完整链路 ✅（最小可验证版）
-- 第 4 阶段：输入层与刷新链路 🚧（已完成手动 URL、data.json 参数缓存、gacha_api、最小刷新链路与前端调试入口）
+- 第 4 阶段：输入层与刷新链路 🚧（已完成手动 URL、日志 URL 提取、data.json 参数缓存、gacha_api、最小刷新链路与前端调试入口）
 
 ---
 
@@ -94,8 +94,8 @@ src/
 
 以下模块尚未开始或未完整实现：
 
-- `gacha_log`
-- `gacha_params`（已完成手动 URL 参数解析，后续可接日志 URL 提取结果）
+- `gacha_log`（已完成从日志提取最新抽卡 URL，并接入参数缓存）
+- `gacha_params`（已完成手动 URL 参数解析，并可解析日志提取结果）
 - `gacha_api`（已完成最小官方接口请求层）
 - `gacha_storage`（已完成 pool.json 读取/写入与 data.json 参数缓存）
 - `gacha_merge`（已完成本地 pool.json 合并）
@@ -106,7 +106,7 @@ src/
 
 以下能力尚未开始：
 
-- 从游戏日志提取抽卡 URL
+- 从游戏日志提取抽卡 URL（已完成）
 - 手动输入 URL 解析（已完成）
 - 官方抽卡接口请求（已完成最小请求层，待真实账号联调）
 - 抽卡记录本地持久化（pool.json 已完成；data.json 参数缓存已完成）
@@ -123,9 +123,9 @@ src/
 
 ### 4.1 下一步建议严格顺序
 
-1. 使用真实抽卡 URL 执行端到端联调：`parse_gacha_url(saveToCache=true) -> refresh_gacha_data`
+1. 使用真实抽卡 URL 或日志提取结果执行端到端联调：`extract_latest_gacha_url -> refresh_gacha_data`
 2. 根据真实接口表现确认是否需要分页、额外请求头或错误码细化
-3. 再补日志扫描、资源同步和复杂 UI
+3. 再补资源同步、真实设置页和复杂 UI
 
 ### 4.1 当前已完成到哪一步
 
@@ -143,9 +143,9 @@ src/
 
 当前下一步建议：
 
-1. 使用真实抽卡 URL 端到端联调刷新链路
+1. 使用真实抽卡 URL 或日志提取结果端到端联调刷新链路
 2. 根据真实接口表现确认是否需要分页、请求头或错误码细化
-3. 后续进入日志扫描或资源同步
+3. 后续进入资源同步
 
 ### 4.2 第 3 阶段已完成内容
 
@@ -243,11 +243,37 @@ src/
   - 刷新后的总览摘要
 - 更新首页当前阶段文案，指向第 4 阶段端到端联调
 
-### 4.6 当前阶段不要做的事
+### 4.6 第 4 阶段日志提取当前已完成内容
+
+已完成：
+
+- 新增 `gacha_log` 模块
+- 按参考文档使用 `/aki/gacha/index.html#/record?` 标记逐行扫描日志
+- 支持从配置的 `gameRootDir + gameLogFileRelativePath` 定位日志文件
+- 支持前端手动传入日志文件路径用于调试
+- 同一日志内收集所有匹配 URL，并取最后一个作为最新抽卡记录 URL
+- 提取后复用 `gacha_params` 解析 URL 参数
+- 新增 Tauri command：`extract_latest_gacha_url`
+- 命令成功后自动写入 `data/{playerId}/data.json` 参数缓存
+- 前端新增：
+  - `ExtractedGachaUrl`
+  - `GachaLogExtractResult`
+  - `ExtractLatestGachaUrlResponse`
+  - `extractLatestGachaUrl(...)` API 封装
+- 首页“第 4 阶段刷新链路调试区”新增从日志提取并缓存 URL 的入口
+- 新增 4 个 `gacha_log` 单元测试
+
+最近验证结果：
+
+- `cargo fmt --manifest-path src-tauri/Cargo.toml` ✅
+- `cargo check --manifest-path src-tauri/Cargo.toml` ✅
+- `cargo test --manifest-path src-tauri/Cargo.toml` ✅，23 tests passed
+- `pnpm check` ✅，0 errors / 0 warnings
+
+### 4.7 当前阶段不要做的事
 
 进入第 4 阶段前，**先不要**急着做：
 
-- 日志扫描
 - 资源同步
 - 复杂图表
 - 大而全设置页

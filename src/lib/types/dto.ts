@@ -153,6 +153,23 @@ export interface RefreshGachaDataResponse {
   summaryList: PoolAnalysisSummary[];
 }
 
+export interface ExtractedGachaUrl {
+  url: string;
+  lineNumber: number;
+}
+
+export interface GachaLogExtractResult {
+  logFilePath: string;
+  totalUrlCount: number;
+  latest: ExtractedGachaUrl;
+}
+
+export interface ExtractLatestGachaUrlResponse {
+  result: GachaLogExtractResult;
+  parsed: ParsedGachaParams;
+  dataFilePath: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T | null;

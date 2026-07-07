@@ -4,6 +4,7 @@ mod config;
 mod error;
 mod gacha_analysis;
 mod gacha_api;
+mod gacha_log;
 mod gacha_merge;
 mod gacha_params;
 mod gacha_storage;
@@ -18,6 +19,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::gacha::analyze_local_pool,
+            commands::gacha::extract_latest_gacha_url,
             commands::gacha::load_cached_gacha_params,
             commands::gacha::merge_local_pool,
             commands::gacha::parse_gacha_url,

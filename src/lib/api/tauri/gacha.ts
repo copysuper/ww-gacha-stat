@@ -1,6 +1,7 @@
 import { invokeCommand } from "$lib/api/tauri/core";
 import type {
   AnalyzeLocalPoolResponse,
+  ExtractLatestGachaUrlResponse,
   LoadCachedGachaParamsResponse,
   MergeLocalPoolResponse,
   ParseGachaUrlResponse,
@@ -46,4 +47,13 @@ export function refreshGachaData(playerId: string) {
   return invokeCommand<RefreshGachaDataResponse>("refresh_gacha_data", {
     request: { playerId },
   });
+}
+
+export function extractLatestGachaUrl(logFilePath?: string) {
+  return invokeCommand<ExtractLatestGachaUrlResponse>(
+    "extract_latest_gacha_url",
+    {
+      request: { logFilePath: logFilePath?.trim() ? logFilePath : null },
+    },
+  );
 }

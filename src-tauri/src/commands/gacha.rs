@@ -11,6 +11,10 @@ use crate::{
     gacha_analysis::model::{AnalysisData, PoolAnalysisSummary, PoolFile},
     gacha_analysis::{analyze_pool_file, build_pool_analysis_summaries},
     gacha_api::{fetch_gacha_pool_file, model::GachaApiPoolResult},
+    gacha_log::{
+        extract_latest_gacha_url_from_file, model::GachaLogExtractResult,
+        resolve_game_log_file_path,
+    },
     gacha_merge::merge_pool_files,
     gacha_merge::model::PoolMergeResult,
     gacha_params::model::{ParsedGachaParams, RequestParams},
@@ -100,6 +104,20 @@ pub struct RefreshGachaDataResponse {
     pub summary_list: Vec<PoolAnalysisSummary>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtractLatestGachaUrlRequest {
+    pub log_file_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExtractLatestGachaUrlResponse {
+    pub result: GachaLogExtractResult,
+    pub parsed: ParsedGachaParams,
+    pub data_file_path: String,
+}
+
 #[tauri::command]
 pub fn analyze_local_pool(
     request: AnalyzeLocalPoolRequest,
@@ -171,6 +189,22 @@ pub async fn refresh_gacha_data(
         }
         Err(error) => {
             error!(error = %error, "refresh_gacha_data 执行失败");
+            ApiResponse::err(error.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub fn extract_latest_gacha_url(
+    request: ExtractLatestGachaUrlRequest,
+) -> ApiResponse<ExtractLatestGachaUrlResponse> {
+    match extract_latest_gacha_url_inner(request) {
+        Ok(response) => {
+            info!("extract_latest_gacha_url 执行成功");
+            ApiResponse::ok(response)
+        }
+        Err(error) => {
+            error!(error = %error, "extract_latest_gacha_url 执行失败");
             ApiResponse::err(error.to_string())
         }
     }
@@ -332,6 +366,27 @@ async fn refresh_gacha_data_inner(
         merge_result,
         analysis_list,
         summary_list,
+    })
+}
+
+fn extract_latest_gacha_url_inner(
+    request: ExtractLatestGachaUrlRequest,
+) -> AppResult<ExtractLatestGachaUrlResponse> {
+    let config_state = load_or_create_app_config_state()?;
+    let data_root = PathBuf::from(config_state.resolved_data_dir);
+    let log_file_path = match request.log_file_path.as_deref().map(str::trim) {
+        Some(path) if !path.is_empty() => PathBuf::from(path),
+        _ => resolve_game_log_file_path(&config_state.config)?,
+    };
+    let result = extract_latest_gacha_url_from_file(&log_file_path)?;
+    let parsed = parse_gacha_url_params(&result.latest.url)?;
+    let data_file_path =
+        save_request_params_for_player(&data_root, &parsed.player_id, &parsed.params)?;
+
+    Ok(ExtractLatestGachaUrlResponse {
+        result,
+        parsed,
+        data_file_path: data_file_path.display().to_string(),
     })
 }
 

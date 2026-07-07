@@ -2,6 +2,7 @@
   import { goto } from "$app/navigation";
   import {
     analyzeLocalPool,
+    extractLatestGachaUrl,
     loadCachedGachaParams,
     parseGachaUrl,
     refreshGachaData,
@@ -11,6 +12,7 @@
   import type {
     AnalyzeLocalPoolResponse,
     AppConfigState,
+    ExtractLatestGachaUrlResponse,
     PoolRankSummary,
     RefreshGachaDataResponse,
   } from "$lib/types/dto";
@@ -22,14 +24,17 @@
   let analyzeErrorMessage = $state("");
   let analyzeResult = $state<AnalyzeLocalPoolResponse | null>(null);
   let samplePoolPath = $state("/workspaces/ww-gacha-stat/doc/examples/sample-pool.json");
+  let logFilePath = $state("");
   let gachaRecordUrl = $state("");
   let refreshPlayerId = $state("");
+  let logLoading = $state(false);
   let parseLoading = $state(false);
   let cacheLoading = $state(false);
   let refreshLoading = $state(false);
   let refreshErrorMessage = $state("");
   let refreshStatusMessage = $state("");
   let cachedParamsJson = $state("");
+  let logExtractResult = $state<ExtractLatestGachaUrlResponse | null>(null);
   let refreshResult = $state<RefreshGachaDataResponse | null>(null);
 
   async function loadConfig() {
@@ -81,6 +86,25 @@
       refreshErrorMessage = error instanceof Error ? error.message : "解析抽卡 URL 失败";
     } finally {
       parseLoading = false;
+    }
+  }
+
+  async function extractUrlFromLog() {
+    refreshErrorMessage = "";
+    refreshStatusMessage = "";
+    logLoading = true;
+
+    try {
+      const result = await extractLatestGachaUrl(logFilePath);
+      logExtractResult = result;
+      gachaRecordUrl = result.result.latest.url;
+      refreshPlayerId = result.parsed.playerId;
+      cachedParamsJson = JSON.stringify(result.parsed.params, null, 2);
+      refreshStatusMessage = `已从日志第 ${result.result.latest.lineNumber} 行提取并缓存参数：${result.dataFilePath}`;
+    } catch (error) {
+      refreshErrorMessage = error instanceof Error ? error.message : "从日志提取抽卡 URL 失败";
+    } finally {
+      logLoading = false;
     }
   }
 
@@ -229,8 +253,19 @@
       </div>
     </Panel>
 
-    <Panel title="第 4 阶段刷新链路调试区" description="粘贴抽卡记录 URL 后缓存参数，再按玩家 ID 调用 Rust 刷新链路。">
+    <Panel title="第 4 阶段刷新链路调试区" description="可从日志提取或手动粘贴抽卡 URL，缓存参数后按玩家 ID 调用 Rust 刷新链路。">
       <div class="debug-controls stacked-controls">
+        <label class="field-group full-width-field">
+          <span>游戏日志文件路径（可选，不填则使用配置中的游戏根目录和日志相对路径）</span>
+          <input bind:value={logFilePath} placeholder="例如：/path/to/Wuthering Waves/Client/Saved/Logs/Client.log" />
+        </label>
+
+        <div class="action-row">
+          <button class="ghost-button" type="button" onclick={extractUrlFromLog} disabled={logLoading}>
+            {#if logLoading}提取中...{:else}从日志提取并缓存 URL{/if}
+          </button>
+        </div>
+
         <label class="field-group full-width-field">
           <span>抽卡记录 URL</span>
           <textarea bind:value={gachaRecordUrl} rows="4" placeholder="粘贴从游戏日志中提取到的 index.html#/record?... URL"></textarea>
@@ -269,6 +304,30 @@
         <section class="history-block">
           <h4>缓存参数预览</h4>
           <pre class="json-preview">{cachedParamsJson}</pre>
+        </section>
+      {/if}
+
+      {#if logExtractResult}
+        <section class="history-block">
+          <h4>日志提取结果</h4>
+          <dl class="meta-grid">
+            <div>
+              <dt>日志文件</dt>
+              <dd>{logExtractResult.result.logFilePath}</dd>
+            </div>
+            <div>
+              <dt>匹配 URL 数量</dt>
+              <dd>{logExtractResult.result.totalUrlCount}</dd>
+            </div>
+            <div>
+              <dt>最新 URL 行号</dt>
+              <dd>{logExtractResult.result.latest.lineNumber}</dd>
+            </div>
+            <div>
+              <dt>缓存文件</dt>
+              <dd>{logExtractResult.dataFilePath}</dd>
+            </div>
+          </dl>
         </section>
       {/if}
 
