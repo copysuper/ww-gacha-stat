@@ -4,6 +4,7 @@ import type {
   LoadCachedGachaParamsResponse,
   MergeLocalPoolResponse,
   ParseGachaUrlResponse,
+  RefreshGachaDataResponse,
 } from "$lib/types/dto";
 
 export function analyzeLocalPool(filePath: string) {
@@ -39,4 +40,10 @@ export function loadCachedGachaParams(playerId: string) {
       request: { playerId },
     },
   );
+}
+
+export function refreshGachaData(playerId: string) {
+  return invokeCommand<RefreshGachaDataResponse>("refresh_gacha_data", {
+    request: { playerId },
+  });
 }

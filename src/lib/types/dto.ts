@@ -137,6 +137,22 @@ export interface LoadCachedGachaParamsResponse {
   params: RequestParams;
 }
 
+export interface GachaApiPoolResult {
+  poolName: string;
+  cardPoolType: string;
+  recordCount: number;
+}
+
+export interface RefreshGachaDataResponse {
+  playerId: string;
+  poolFilePath: string;
+  dataFilePath: string;
+  apiPoolResults: GachaApiPoolResult[];
+  mergeResult: PoolMergeResult;
+  analysisList: AnalysisData[];
+  summaryList: PoolAnalysisSummary[];
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T | null;

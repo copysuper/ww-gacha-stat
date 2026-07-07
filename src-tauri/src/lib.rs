@@ -3,6 +3,7 @@ mod commands;
 mod config;
 mod error;
 mod gacha_analysis;
+mod gacha_api;
 mod gacha_merge;
 mod gacha_params;
 mod gacha_storage;
@@ -20,6 +21,7 @@ pub fn run() {
             commands::gacha::load_cached_gacha_params,
             commands::gacha::merge_local_pool,
             commands::gacha::parse_gacha_url,
+            commands::gacha::refresh_gacha_data,
             commands::settings::get_app_config,
             commands::settings::update_app_config,
         ])

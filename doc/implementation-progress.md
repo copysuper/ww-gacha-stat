@@ -18,7 +18,7 @@
 - 第 1 阶段：基础设施搭建 ✅
 - 第 2 阶段：离线抽卡分析核心 ✅
 - 第 3 阶段：新旧数据合并与本地持久化完整链路 ✅（最小可验证版）
-- 第 4 阶段：输入层与刷新链路 🚧（已完成手动 URL 参数解析与 data.json 参数缓存）
+- 第 4 阶段：输入层与刷新链路 🚧（已完成手动 URL、data.json 参数缓存、gacha_api 与最小刷新链路）
 
 ---
 
@@ -96,7 +96,7 @@ src/
 
 - `gacha_log`
 - `gacha_params`（已完成手动 URL 参数解析，后续可接日志 URL 提取结果）
-- `gacha_api`
+- `gacha_api`（已完成最小官方接口请求层）
 - `gacha_storage`（已完成 pool.json 读取/写入与 data.json 参数缓存）
 - `gacha_merge`（已完成本地 pool.json 合并）
 - `gacha_analysis`（已完成离线分析核心）
@@ -108,7 +108,7 @@ src/
 
 - 从游戏日志提取抽卡 URL
 - 手动输入 URL 解析（已完成）
-- 官方抽卡接口请求
+- 官方抽卡接口请求（已完成最小请求层，待真实账号联调）
 - 抽卡记录本地持久化（pool.json 已完成；data.json 参数缓存已完成）
 - 新旧记录合并（已完成本地新旧 pool.json 合并）
 - 离线抽卡分析（核心已完成；后续按真实刷新链路需要迭代）
@@ -123,14 +123,10 @@ src/
 
 ### 4.1 下一步建议严格顺序
 
-1. 开始实现 `gacha_api`，按卡池请求官方抽卡记录
-2. 使用 `data/{playerId}/data.json` 读取刷新参数
-3. 将接口返回转换为 `PoolFile`
-4. 串联 `gacha_api -> gacha_merge -> gacha_storage -> gacha_analysis`
-5. 在刷新成功后同时保存：
-   - `data/{playerId}/pool.json`
-   - `data/{playerId}/data.json`
-6. 最后再补日志扫描、资源同步和复杂 UI
+1. 使用真实抽卡 URL 执行端到端联调：`parse_gacha_url(saveToCache=true) -> refresh_gacha_data`
+2. 根据真实接口表现确认是否需要分页、额外请求头或错误码细化
+3. 前端增加最小刷新入口，优先复用现有调试区
+4. 再补日志扫描、资源同步和复杂 UI
 
 ### 4.1 当前已完成到哪一步
 
@@ -148,9 +144,9 @@ src/
 
 当前下一步建议：
 
-1. 开始实现 `gacha_api`，按卡池请求官方抽卡记录
-2. 将 `gacha_params -> gacha_api -> gacha_merge -> gacha_storage -> gacha_analysis` 串成刷新链路
-3. 前端增加最小刷新入口，优先复用现有调试区
+1. 使用真实抽卡 URL 端到端联调刷新链路
+2. 前端增加最小刷新入口，优先复用现有调试区
+3. 后续进入日志扫描或资源同步
 
 ### 4.2 第 3 阶段已完成内容
 
@@ -208,7 +204,32 @@ src/
 - 新增 4 个 `gacha_params` 单元测试
 - 新增 2 个 `gacha_storage` 参数缓存单元测试
 
-### 4.4 当前阶段不要做的事
+### 4.4 第 4 阶段刷新链路当前已完成内容
+
+已完成：
+
+- 新增 `gacha_api` 模块
+- 按 `playerId` 选择官方请求地址：
+  - `1*`：`https://gmserver-api.aki-game2.com/gacha/record/query`
+  - 其他：`https://gmserver-api.aki-game2.net/gacha/record/query`
+- 按卡池覆盖 `cardPoolType`，保留 `data.json` 中未知参数
+- 默认卡池列表已按参考文档配置到 `AppConfig`
+- 兼容旧配置 `cardPools` 为空时自动使用默认卡池
+- 新增 Tauri command：`refresh_gacha_data`
+- 刷新链路已串联：
+  - 读取 `data/{playerId}/data.json`
+  - 请求官方卡池记录
+  - 转换为 `PoolFile`
+  - 与本地 `pool.json` 合并
+  - 保存 `pool.json` 与 `data.json`
+  - 返回 `analysisList` / `summaryList`
+- 前端新增：
+  - `GachaApiPoolResult`
+  - `RefreshGachaDataResponse`
+  - `refreshGachaData(...)` API 封装
+- 新增 2 个 `gacha_api` 单元测试
+
+### 4.5 当前阶段不要做的事
 
 进入第 4 阶段前，**先不要**急着做：
 
@@ -287,7 +308,9 @@ src/
 - 已覆盖字段映射、URL 编码解码、缺少必要参数、非 record URL ✅
 - `gacha_storage` 2 个参数缓存单元测试 ✅
 - 已覆盖按玩家 ID 写入/读取 `data.json`、拒绝不安全玩家 ID ✅
-- Rust 全量测试 17 个通过 ✅
+- `gacha_api` 2 个单元测试 ✅
+- 已覆盖玩家 ID 分服 URL 选择、请求体覆盖 `cardPoolType` 且保留未知参数 ✅
+- Rust 全量测试 19 个通过 ✅
 - `cargo check --manifest-path src-tauri/Cargo.toml` ✅
 - `cargo test --manifest-path src-tauri/Cargo.toml` ✅
 - `pnpm check` ✅
@@ -314,4 +337,4 @@ src/
 ## 8. 最后更新时间
 
 - 日期：2026-07-07
-- 状态：第 4 阶段已完成手动抽卡 URL 参数解析与 data.json 参数缓存，下一步进入 gacha_api 官方接口请求与刷新链路串联
+- 状态：第 4 阶段已完成手动抽卡 URL 参数解析、data.json 参数缓存、gacha_api 和最小刷新链路，下一步使用真实抽卡 URL 联调并补最小前端刷新入口

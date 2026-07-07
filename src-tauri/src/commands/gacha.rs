@@ -5,17 +5,19 @@ use tracing::{error, info};
 
 use crate::{
     commands::ApiResponse,
+    config::model::default_card_pools,
     config::{load_or_create_app_config_state, AppConfig},
     error::{AppError, AppResult},
     gacha_analysis::model::{AnalysisData, PoolAnalysisSummary, PoolFile},
     gacha_analysis::{analyze_pool_file, build_pool_analysis_summaries},
+    gacha_api::{fetch_gacha_pool_file, model::GachaApiPoolResult},
     gacha_merge::merge_pool_files,
     gacha_merge::model::PoolMergeResult,
     gacha_params::model::{ParsedGachaParams, RequestParams},
     gacha_params::parse_gacha_url_params,
     gacha_storage::{
-        load_pool_file_from_path, load_request_params_for_player, save_pool_file_to_path,
-        save_request_params_for_player,
+        load_pool_file_from_path, load_request_params_for_player, player_data_dir,
+        save_pool_file_to_path, save_request_params_for_player,
     },
 };
 
@@ -80,6 +82,24 @@ pub struct LoadCachedGachaParamsResponse {
     pub params: RequestParams,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RefreshGachaDataRequest {
+    pub player_id: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RefreshGachaDataResponse {
+    pub player_id: String,
+    pub pool_file_path: String,
+    pub data_file_path: String,
+    pub api_pool_results: Vec<GachaApiPoolResult>,
+    pub merge_result: PoolMergeResult,
+    pub analysis_list: Vec<AnalysisData>,
+    pub summary_list: Vec<PoolAnalysisSummary>,
+}
+
 #[tauri::command]
 pub fn analyze_local_pool(
     request: AnalyzeLocalPoolRequest,
@@ -135,6 +155,22 @@ pub fn load_cached_gacha_params(
         }
         Err(error) => {
             error!(error = %error, "load_cached_gacha_params 执行失败");
+            ApiResponse::err(error.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn refresh_gacha_data(
+    request: RefreshGachaDataRequest,
+) -> ApiResponse<RefreshGachaDataResponse> {
+    match refresh_gacha_data_inner(request).await {
+        Ok(response) => {
+            info!("refresh_gacha_data 执行成功");
+            ApiResponse::ok(response)
+        }
+        Err(error) => {
+            error!(error = %error, "refresh_gacha_data 执行失败");
             ApiResponse::err(error.to_string())
         }
     }
@@ -248,6 +284,54 @@ fn load_cached_gacha_params_inner(
         player_id: request.player_id,
         data_file_path,
         params,
+    })
+}
+
+async fn refresh_gacha_data_inner(
+    request: RefreshGachaDataRequest,
+) -> AppResult<RefreshGachaDataResponse> {
+    if request.player_id.trim().is_empty() {
+        return Err(AppError::Validation("玩家 ID 不能为空".to_string()));
+    }
+
+    let config_state = load_or_create_app_config_state()?;
+    let app_config = config_state.config;
+    let data_root = PathBuf::from(config_state.resolved_data_dir);
+    let player_dir = player_data_dir(&data_root, &request.player_id)?;
+    let data_file_path = player_dir.join("data.json");
+    let pool_file_path = player_dir.join("pool.json");
+    let params = load_request_params_for_player(&data_root, &request.player_id)?;
+    let card_pools = if app_config.card_pools.is_empty() {
+        default_card_pools()
+    } else {
+        app_config.card_pools.clone()
+    };
+    let api_result = fetch_gacha_pool_file(&params, &card_pools).await?;
+    let old_pool_file = if pool_file_path.exists() {
+        load_pool_file_from_path(&pool_file_path)?
+    } else {
+        PoolFile::new()
+    };
+    let (merged_pool_file, merge_result) = merge_pool_files(&old_pool_file, &api_result.pool_file);
+
+    save_pool_file_to_path(&pool_file_path, &merged_pool_file)?;
+    save_request_params_for_player(&data_root, &request.player_id, &params)?;
+
+    let analysis_list = analyze_pool_file(
+        &merged_pool_file,
+        app_config.skip_first_ssr,
+        &build_base_ssr_id_set(&app_config),
+    );
+    let summary_list = build_pool_analysis_summaries(&analysis_list);
+
+    Ok(RefreshGachaDataResponse {
+        player_id: request.player_id,
+        pool_file_path: pool_file_path.display().to_string(),
+        data_file_path: data_file_path.display().to_string(),
+        api_pool_results: api_result.pool_results,
+        merge_result,
+        analysis_list,
+        summary_list,
     })
 }
 
