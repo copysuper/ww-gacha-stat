@@ -89,6 +89,31 @@ export interface AnalyzeLocalPoolResponse {
   summaryList: PoolAnalysisSummary[];
 }
 
+export interface PoolMergeSummary {
+  poolName: string;
+  oldCount: number;
+  newCount: number;
+  mergedCount: number;
+  appendedOldCount: number;
+}
+
+export interface PoolMergeResult {
+  summaries: PoolMergeSummary[];
+  totalOldCount: number;
+  totalNewCount: number;
+  totalMergedCount: number;
+  totalAppendedOldCount: number;
+}
+
+export interface MergeLocalPoolResponse {
+  oldFilePath: string | null;
+  newFilePath: string;
+  outputFilePath: string;
+  mergeResult: PoolMergeResult;
+  analysisList: AnalysisData[];
+  summaryList: PoolAnalysisSummary[];
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T | null;

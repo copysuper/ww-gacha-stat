@@ -13,10 +13,11 @@
 
 ## 1. 当前阶段
 
-当前处于：**第 2 阶段已完成**
+当前处于：**第 3 阶段最小完整链路已完成**
 
 - 第 1 阶段：基础设施搭建 ✅
 - 第 2 阶段：离线抽卡分析核心 ✅
+- 第 3 阶段：新旧数据合并与本地持久化完整链路 ✅（最小可验证版）
 
 ---
 
@@ -117,7 +118,7 @@ src/
 
 ## 4. 下一步唯一优先目标
 
-下一步进入：**第 3 阶段：新旧数据合并与本地持久化完整链路**
+下一步进入：**第 4 阶段：输入层与刷新链路**
 
 ### 4.1 下一步建议严格顺序
 
@@ -156,25 +157,49 @@ src/
 
 当前下一步建议：
 
-1. 开始实现 `gacha_merge`
-2. 补本地 `pool.json` 完整持久化写入能力
-3. 接入新旧记录去重、合并、排序
+1. 开始实现 `gacha_params`，支持手动输入抽卡 URL 的参数解析
+2. 开始实现 `gacha_api`，按卡池请求官方抽卡记录
+3. 将 `gacha_api -> gacha_merge -> gacha_storage -> gacha_analysis` 串成刷新链路
 
-### 4.2 当前阶段不要做的事
+### 4.2 第 3 阶段已完成内容
 
-进入第 2 阶段时，**先不要**急着做：
+已完成：
+
+- 新增 `gacha_merge` 模块
+- 实现参考文档要求的“按时间拼接”合并策略
+- 支持多卡池合并，卡池名取新旧 `pool.json` 并集
+- 实现同一边界秒旧记录跳过规则
+- 新增 `PoolMergeSummary` / `PoolMergeResult` 合并摘要
+- 扩展 `gacha_storage`：
+  - 保存 `pool.json`
+  - 自动创建父目录
+  - pretty JSON 写入
+  - 保存前按自然日备份旧 `pool.json` 为 `pool.json.bak`
+- 新增 Tauri command：`merge_local_pool`
+- 前端新增：
+  - `MergeLocalPoolResponse`
+  - `PoolMergeResult`
+  - `PoolMergeSummary`
+  - `mergeLocalPool(...)` API 封装
+- 新增合并示例数据：
+  - `doc/examples/merge-old-pool.json`
+  - `doc/examples/merge-new-pool.json`
+  - `doc/examples/merge-expected-pool.json`
+- 新增 6 个 `gacha_merge` 单元测试
+
+### 4.3 当前阶段不要做的事
+
+进入第 4 阶段前，**先不要**急着做：
 
 - 日志扫描
-- URL 解析
-- 网络请求
 - 资源同步
 - 复杂图表
 - 大而全设置页
 
 原因：
 
-- 必须先把“分析核心”做稳
-- 避免输入层和资源层干扰核心统计算法验证
+- 必须先把“URL 参数解析 + 请求 + 合并 + 保存 + 分析”的主链路做稳
+- 避免资源层和复杂 UI 干扰刷新链路验证
 
 ---
 
@@ -188,7 +213,7 @@ src/
 4. `doc/implementation-progress.md`
 5. `/memories/repo/project-notes.md`
 
-然后直接继续第 2 阶段实现。
+然后直接继续第 4 阶段实现。
 
 ---
 
@@ -226,6 +251,15 @@ src/
 - 已新增 5 个 Rust 单元测试覆盖上述样例 ✅
 - `cargo test --manifest-path src-tauri/Cargo.toml gacha_analysis::service::tests -- --nocapture` ✅
 
+### 第 3 阶段最小链路验证
+
+- `merge-old-pool.json + merge-new-pool.json -> merge-expected-pool.json` ✅
+- `gacha_merge` 6 个单元测试 ✅
+- Rust 全量测试 11 个通过 ✅
+- `cargo check --manifest-path src-tauri/Cargo.toml` ✅
+- `cargo test --manifest-path src-tauri/Cargo.toml` ✅
+- `pnpm check` ✅
+
 ---
 
 ## 7. 已知约束与注意事项
@@ -247,5 +281,5 @@ src/
 
 ## 8. 最后更新时间
 
-- 日期：2026-07-06
-- 状态：第 2 阶段已完成，已具备离线分析、总览映射与样例验证能力
+- 日期：2026-07-07
+- 状态：第 3 阶段最小完整链路已完成，已具备本地新旧 pool.json 合并、保存、摘要返回与自动化验证能力

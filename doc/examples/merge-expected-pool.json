@@ -1,0 +1,53 @@
+{
+  "常驻角色唤取": [
+    {
+      "cardPoolType": "3",
+      "resourceId": 1105,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "维里奈",
+      "count": 1,
+      "time": "2024-01-04 10:00:00"
+    }
+  ],
+  "武器活动唤取": [
+    {
+      "cardPoolType": "2",
+      "resourceId": 21050036,
+      "qualityLevel": 4,
+      "resourceType": "武器",
+      "name": "奇幻变奏",
+      "count": 1,
+      "time": "2024-01-01 09:00:00"
+    }
+  ],
+  "角色活动唤取": [
+    {
+      "cardPoolType": "1",
+      "resourceId": 1302,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "忌炎",
+      "count": 1,
+      "time": "2024-01-03 10:00:00"
+    },
+    {
+      "cardPoolType": "1",
+      "resourceId": 1104,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "鉴心",
+      "count": 1,
+      "time": "2024-01-02 10:00:00"
+    },
+    {
+      "cardPoolType": "1",
+      "resourceId": 390080002,
+      "qualityLevel": 3,
+      "resourceType": "武器",
+      "name": "戍关长刃·定军",
+      "count": 1,
+      "time": "2024-01-01 10:00:00"
+    }
+  ]
+}

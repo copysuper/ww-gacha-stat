@@ -1,0 +1,33 @@
+{
+  "角色活动唤取": [
+    {
+      "cardPoolType": "1",
+      "resourceId": 1302,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "忌炎",
+      "count": 1,
+      "time": "2024-01-03 10:00:00"
+    },
+    {
+      "cardPoolType": "1",
+      "resourceId": 1104,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "鉴心",
+      "count": 1,
+      "time": "2024-01-02 10:00:00"
+    }
+  ],
+  "常驻角色唤取": [
+    {
+      "cardPoolType": "3",
+      "resourceId": 1105,
+      "qualityLevel": 5,
+      "resourceType": "角色",
+      "name": "维里奈",
+      "count": 1,
+      "time": "2024-01-04 10:00:00"
+    }
+  ]
+}
