@@ -13,11 +13,12 @@
 
 ## 1. 当前阶段
 
-当前处于：**第 3 阶段最小完整链路已完成**
+当前处于：**第 4 阶段已开始：输入层与刷新链路**
 
 - 第 1 阶段：基础设施搭建 ✅
 - 第 2 阶段：离线抽卡分析核心 ✅
 - 第 3 阶段：新旧数据合并与本地持久化完整链路 ✅（最小可验证版）
+- 第 4 阶段：输入层与刷新链路 🚧（已完成手动 URL 参数解析）
 
 ---
 
@@ -91,14 +92,14 @@ src/
 
 ### 3.1 当前还**没有**实现的业务模块
 
-以下模块尚未开始：
+以下模块尚未开始或未完整实现：
 
 - `gacha_log`
-- `gacha_params`
+- `gacha_params`（已完成手动 URL 参数解析，后续可接日志 URL 提取结果）
 - `gacha_api`
-- `gacha_storage`（已完成最小读取能力）
-- `gacha_merge`
-- `gacha_analysis`（已完成最小分析能力）
+- `gacha_storage`（已完成 pool.json 读取/写入；data.json 参数缓存尚未接入）
+- `gacha_merge`（已完成本地 pool.json 合并）
+- `gacha_analysis`（已完成离线分析核心）
 - `resource_sync`
 
 ### 3.2 当前还**没有**实现的业务能力
@@ -106,11 +107,11 @@ src/
 以下能力尚未开始：
 
 - 从游戏日志提取抽卡 URL
-- 手动输入 URL 解析
+- 手动输入 URL 解析（已完成）
 - 官方抽卡接口请求
-- 抽卡记录本地持久化（完整版本尚未开始）
-- 新旧记录合并
-- 离线抽卡分析（核心已完成；后续仅在第 3 阶段后按需要迭代）
+- 抽卡记录本地持久化（pool.json 已完成；data.json 参数缓存尚未完成）
+- 新旧记录合并（已完成本地新旧 pool.json 合并）
+- 离线抽卡分析（核心已完成；后续按真实刷新链路需要迭代）
 - 图片资源同步
 - 真实设置页表单
 
@@ -157,9 +158,9 @@ src/
 
 当前下一步建议：
 
-1. 开始实现 `gacha_params`，支持手动输入抽卡 URL 的参数解析
+1. 扩展 `gacha_storage`，支持 `data.json` 参数缓存读写
 2. 开始实现 `gacha_api`，按卡池请求官方抽卡记录
-3. 将 `gacha_api -> gacha_merge -> gacha_storage -> gacha_analysis` 串成刷新链路
+3. 将 `gacha_params -> gacha_api -> gacha_merge -> gacha_storage -> gacha_analysis` 串成刷新链路
 
 ### 4.2 第 3 阶段已完成内容
 
@@ -187,7 +188,32 @@ src/
   - `doc/examples/merge-expected-pool.json`
 - 新增 6 个 `gacha_merge` 单元测试
 
-### 4.3 当前阶段不要做的事
+### 4.3 第 4 阶段当前已完成内容
+
+已完成：
+
+- 新增 `gacha_params` 模块
+- 定义 `RequestParams` / `ParsedGachaParams`
+- 实现 `parse_gacha_url_params`
+- 支持从手动输入的抽卡记录 URL 中解析 query 参数
+- 按参考文档完成字段映射：
+  - `player_id -> playerId`
+  - `record_id -> recordId`
+  - `resources_id -> cardPoolId`
+  - `gacha_type -> cardPoolType`
+  - `svr_id -> serverId`
+  - `lang -> languageCode`
+- 保留未知 query 参数，避免丢失官方接口后续可能需要的字段
+- 支持 hash fragment 后的 query：`index.html#/record?...`
+- 新增 Tauri command：`parse_gacha_url`
+- 前端新增：
+  - `RequestParams`
+  - `ParsedGachaParams`
+  - `ParseGachaUrlResponse`
+  - `parseGachaUrl(...)` API 封装
+- 新增 4 个 `gacha_params` 单元测试
+
+### 4.4 当前阶段不要做的事
 
 进入第 4 阶段前，**先不要**急着做：
 
@@ -260,6 +286,15 @@ src/
 - `cargo test --manifest-path src-tauri/Cargo.toml` ✅
 - `pnpm check` ✅
 
+### 第 4 阶段输入层验证
+
+- `gacha_params` 4 个单元测试 ✅
+- 已覆盖字段映射、URL 编码解码、缺少必要参数、非 record URL ✅
+- Rust 全量测试 15 个通过 ✅
+- `cargo check --manifest-path src-tauri/Cargo.toml` ✅
+- `cargo test --manifest-path src-tauri/Cargo.toml` ✅
+- `pnpm check` ✅
+
 ---
 
 ## 7. 已知约束与注意事项
@@ -282,4 +317,4 @@ src/
 ## 8. 最后更新时间
 
 - 日期：2026-07-07
-- 状态：第 3 阶段最小完整链路已完成，已具备本地新旧 pool.json 合并、保存、摘要返回与自动化验证能力
+- 状态：第 4 阶段已开始，已具备手动抽卡 URL 参数解析、Tauri command、前端 API 封装与自动化验证能力

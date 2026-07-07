@@ -114,6 +114,22 @@ export interface MergeLocalPoolResponse {
   summaryList: PoolAnalysisSummary[];
 }
 
+export type RequestParams = Record<string, string>;
+
+export interface ParsedGachaParams {
+  playerId: string;
+  recordId: string;
+  cardPoolId: string;
+  cardPoolType: string;
+  serverId: string;
+  languageCode: string;
+  params: RequestParams;
+}
+
+export interface ParseGachaUrlResponse {
+  parsed: ParsedGachaParams;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   data: T | null;

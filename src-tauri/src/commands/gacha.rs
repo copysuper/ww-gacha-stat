@@ -11,6 +11,8 @@ use crate::{
     gacha_analysis::{analyze_pool_file, build_pool_analysis_summaries},
     gacha_merge::merge_pool_files,
     gacha_merge::model::PoolMergeResult,
+    gacha_params::model::ParsedGachaParams,
+    gacha_params::parse_gacha_url_params,
     gacha_storage::{load_pool_file_from_path, save_pool_file_to_path},
 };
 
@@ -47,6 +49,18 @@ pub struct MergeLocalPoolResponse {
     pub summary_list: Vec<PoolAnalysisSummary>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParseGachaUrlRequest {
+    pub url: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ParseGachaUrlResponse {
+    pub parsed: ParsedGachaParams,
+}
+
 #[tauri::command]
 pub fn analyze_local_pool(
     request: AnalyzeLocalPoolRequest,
@@ -72,6 +86,20 @@ pub fn merge_local_pool(request: MergeLocalPoolRequest) -> ApiResponse<MergeLoca
         }
         Err(error) => {
             error!(error = %error, "merge_local_pool 执行失败");
+            ApiResponse::err(error.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub fn parse_gacha_url(request: ParseGachaUrlRequest) -> ApiResponse<ParseGachaUrlResponse> {
+    match parse_gacha_url_inner(request) {
+        Ok(response) => {
+            info!("parse_gacha_url 执行成功");
+            ApiResponse::ok(response)
+        }
+        Err(error) => {
+            error!(error = %error, "parse_gacha_url 执行失败");
             ApiResponse::err(error.to_string())
         }
     }
@@ -142,6 +170,12 @@ fn merge_local_pool_inner(request: MergeLocalPoolRequest) -> AppResult<MergeLoca
         analysis_list,
         summary_list,
     })
+}
+
+fn parse_gacha_url_inner(request: ParseGachaUrlRequest) -> AppResult<ParseGachaUrlResponse> {
+    let parsed = parse_gacha_url_params(&request.url)?;
+
+    Ok(ParseGachaUrlResponse { parsed })
 }
 
 fn load_optional_pool_file(file_path: Option<&str>) -> AppResult<PoolFile> {

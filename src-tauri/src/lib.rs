@@ -4,6 +4,7 @@ mod config;
 mod error;
 mod gacha_analysis;
 mod gacha_merge;
+mod gacha_params;
 mod gacha_storage;
 
 use tracing_subscriber::{fmt, EnvFilter};
@@ -17,6 +18,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::gacha::analyze_local_pool,
             commands::gacha::merge_local_pool,
+            commands::gacha::parse_gacha_url,
             commands::settings::get_app_config,
             commands::settings::update_app_config,
         ])

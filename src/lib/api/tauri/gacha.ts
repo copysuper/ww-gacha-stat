@@ -2,6 +2,7 @@ import { invokeCommand } from "$lib/api/tauri/core";
 import type {
   AnalyzeLocalPoolResponse,
   MergeLocalPoolResponse,
+  ParseGachaUrlResponse,
 } from "$lib/types/dto";
 
 export function analyzeLocalPool(filePath: string) {
@@ -21,5 +22,11 @@ export function mergeLocalPool(
       newFilePath,
       outputFilePath,
     },
+  });
+}
+
+export function parseGachaUrl(url: string) {
+  return invokeCommand<ParseGachaUrlResponse>("parse_gacha_url", {
+    request: { url },
   });
 }
