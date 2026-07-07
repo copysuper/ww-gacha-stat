@@ -11,9 +11,12 @@ use crate::{
     gacha_analysis::{analyze_pool_file, build_pool_analysis_summaries},
     gacha_merge::merge_pool_files,
     gacha_merge::model::PoolMergeResult,
-    gacha_params::model::ParsedGachaParams,
+    gacha_params::model::{ParsedGachaParams, RequestParams},
     gacha_params::parse_gacha_url_params,
-    gacha_storage::{load_pool_file_from_path, save_pool_file_to_path},
+    gacha_storage::{
+        load_pool_file_from_path, load_request_params_for_player, save_pool_file_to_path,
+        save_request_params_for_player,
+    },
 };
 
 #[derive(Debug, Deserialize)]
@@ -53,12 +56,28 @@ pub struct MergeLocalPoolResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ParseGachaUrlRequest {
     pub url: String,
+    pub save_to_cache: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParseGachaUrlResponse {
     pub parsed: ParsedGachaParams,
+    pub data_file_path: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoadCachedGachaParamsRequest {
+    pub player_id: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LoadCachedGachaParamsResponse {
+    pub player_id: String,
+    pub data_file_path: String,
+    pub params: RequestParams,
 }
 
 #[tauri::command]
@@ -100,6 +119,22 @@ pub fn parse_gacha_url(request: ParseGachaUrlRequest) -> ApiResponse<ParseGachaU
         }
         Err(error) => {
             error!(error = %error, "parse_gacha_url 执行失败");
+            ApiResponse::err(error.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+pub fn load_cached_gacha_params(
+    request: LoadCachedGachaParamsRequest,
+) -> ApiResponse<LoadCachedGachaParamsResponse> {
+    match load_cached_gacha_params_inner(request) {
+        Ok(response) => {
+            info!("load_cached_gacha_params 执行成功");
+            ApiResponse::ok(response)
+        }
+        Err(error) => {
+            error!(error = %error, "load_cached_gacha_params 执行失败");
             ApiResponse::err(error.to_string())
         }
     }
@@ -174,8 +209,46 @@ fn merge_local_pool_inner(request: MergeLocalPoolRequest) -> AppResult<MergeLoca
 
 fn parse_gacha_url_inner(request: ParseGachaUrlRequest) -> AppResult<ParseGachaUrlResponse> {
     let parsed = parse_gacha_url_params(&request.url)?;
+    let data_file_path = if request.save_to_cache.unwrap_or(false) {
+        let config_state = load_or_create_app_config_state()?;
+        let path = save_request_params_for_player(
+            &PathBuf::from(config_state.resolved_data_dir),
+            &parsed.player_id,
+            &parsed.params,
+        )?;
 
-    Ok(ParseGachaUrlResponse { parsed })
+        Some(path.display().to_string())
+    } else {
+        None
+    };
+
+    Ok(ParseGachaUrlResponse {
+        parsed,
+        data_file_path,
+    })
+}
+
+fn load_cached_gacha_params_inner(
+    request: LoadCachedGachaParamsRequest,
+) -> AppResult<LoadCachedGachaParamsResponse> {
+    if request.player_id.trim().is_empty() {
+        return Err(AppError::Validation("玩家 ID 不能为空".to_string()));
+    }
+
+    let config_state = load_or_create_app_config_state()?;
+    let data_root = PathBuf::from(config_state.resolved_data_dir);
+    let params = load_request_params_for_player(&data_root, &request.player_id)?;
+    let data_file_path = data_root
+        .join(&request.player_id)
+        .join("data.json")
+        .display()
+        .to_string();
+
+    Ok(LoadCachedGachaParamsResponse {
+        player_id: request.player_id,
+        data_file_path,
+        params,
+    })
 }
 
 fn load_optional_pool_file(file_path: Option<&str>) -> AppResult<PoolFile> {

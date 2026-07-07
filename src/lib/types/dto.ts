@@ -128,6 +128,13 @@ export interface ParsedGachaParams {
 
 export interface ParseGachaUrlResponse {
   parsed: ParsedGachaParams;
+  dataFilePath: string | null;
+}
+
+export interface LoadCachedGachaParamsResponse {
+  playerId: string;
+  dataFilePath: string;
+  params: RequestParams;
 }
 
 export interface ApiResponse<T> {

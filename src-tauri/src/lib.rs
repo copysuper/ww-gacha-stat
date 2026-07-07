@@ -17,6 +17,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             commands::gacha::analyze_local_pool,
+            commands::gacha::load_cached_gacha_params,
             commands::gacha::merge_local_pool,
             commands::gacha::parse_gacha_url,
             commands::settings::get_app_config,
