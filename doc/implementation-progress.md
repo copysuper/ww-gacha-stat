@@ -252,6 +252,7 @@ src/
 - 支持从配置的 `gameRootDir + gameLogFileRelativePath` 定位日志文件
 - 支持前端手动传入日志文件路径用于调试
 - 同一日志内收集所有匹配 URL，并取最后一个作为最新抽卡记录 URL
+- 日志读取使用字节扫描而不是 UTF-8 行读取，可兼容 Windows 游戏日志中混入非 UTF-8 字节的情况
 - 提取后复用 `gacha_params` 解析 URL 参数
 - 新增 Tauri command：`extract_latest_gacha_url`
 - 命令成功后自动写入 `data/{playerId}/data.json` 参数缓存
@@ -261,13 +262,13 @@ src/
   - `ExtractLatestGachaUrlResponse`
   - `extractLatestGachaUrl(...)` API 封装
 - 首页“第 4 阶段刷新链路调试区”新增从日志提取并缓存 URL 的入口
-- 新增 4 个 `gacha_log` 单元测试
+- 新增 5 个 `gacha_log` 单元测试，覆盖非 UTF-8 日志字节回归场景
 
 最近验证结果：
 
 - `cargo fmt --manifest-path src-tauri/Cargo.toml` ✅
 - `cargo check --manifest-path src-tauri/Cargo.toml` ✅
-- `cargo test --manifest-path src-tauri/Cargo.toml` ✅，23 tests passed
+- `cargo test --manifest-path src-tauri/Cargo.toml` ✅，24 tests passed
 - `pnpm check` ✅，0 errors / 0 warnings
 
 ### 4.7 当前阶段不要做的事

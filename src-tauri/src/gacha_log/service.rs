@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{BufRead, BufReader},
+    io::Read,
     path::{Path, PathBuf},
 };
 
@@ -14,6 +14,7 @@ use crate::{
 use super::model::{ExtractedGachaUrl, GachaLogExtractResult};
 
 const GACHA_RECORD_MARKER: &str = "/aki/gacha/index.html#/record?";
+const GACHA_RECORD_MARKER_BYTES: &[u8] = GACHA_RECORD_MARKER.as_bytes();
 
 pub fn resolve_game_log_file_path(config: &AppConfig) -> AppResult<PathBuf> {
     let game_root_dir = config
@@ -40,15 +41,16 @@ pub fn extract_latest_gacha_url_from_file(
         )));
     }
 
-    let file = File::open(log_file_path)?;
-    let reader = BufReader::new(file);
+    let mut file = File::open(log_file_path)?;
+    let mut content = Vec::new();
+    file.read_to_end(&mut content)?;
     let mut total_url_count = 0usize;
     let mut latest: Option<ExtractedGachaUrl> = None;
 
-    // 逐行扫描日志，保留最后一个抽卡记录 URL 作为最新可用 URL。
-    for (line_index, line_result) in reader.lines().enumerate() {
-        let line = line_result?;
-        for url in extract_gacha_urls_from_line(&line) {
+    // 游戏日志在 Windows 上可能混入非 UTF-8 字节，不能用 BufRead::lines()。
+    // 这里按字节逐行扫描，只提取 ASCII URL 片段，避免编码问题影响抽卡 URL 提取。
+    for (line_index, line) in content.split(|byte| *byte == b'\n').enumerate() {
+        for url in extract_gacha_urls_from_line_bytes(line) {
             total_url_count += 1;
             latest = Some(ExtractedGachaUrl {
                 url,
@@ -75,11 +77,16 @@ pub fn extract_latest_gacha_url_from_file(
     })
 }
 
+#[cfg(test)]
 fn extract_gacha_urls_from_line(line: &str) -> Vec<String> {
+    extract_gacha_urls_from_line_bytes(line.as_bytes())
+}
+
+fn extract_gacha_urls_from_line_bytes(line: &[u8]) -> Vec<String> {
     let mut urls = Vec::new();
     let mut search_start = 0usize;
 
-    while let Some(relative_index) = line[search_start..].find(GACHA_RECORD_MARKER) {
+    while let Some(relative_index) = find_bytes(&line[search_start..], GACHA_RECORD_MARKER_BYTES) {
         let marker_index = search_start + relative_index;
         let url_start = find_url_start(line, marker_index);
         let url_end = find_url_end(line, marker_index);
@@ -96,32 +103,62 @@ fn extract_gacha_urls_from_line(line: &str) -> Vec<String> {
     urls
 }
 
-fn find_url_start(line: &str, marker_index: usize) -> usize {
-    line[..marker_index].rfind("http").unwrap_or(marker_index)
+fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    if needle.is_empty() || haystack.len() < needle.len() {
+        return None;
+    }
+
+    haystack
+        .windows(needle.len())
+        .position(|window| window == needle)
 }
 
-fn find_url_end(line: &str, marker_index: usize) -> usize {
+fn find_url_start(line: &[u8], marker_index: usize) -> usize {
+    line[..marker_index]
+        .windows(b"http".len())
+        .rposition(|window| window == b"http")
+        .unwrap_or(marker_index)
+}
+
+fn find_url_end(line: &[u8], marker_index: usize) -> usize {
     let tail = &line[marker_index..];
     let end_offset = tail
-        .find(|character: char| {
-            character.is_whitespace()
-                || matches!(character, '"' | '\'' | '`' | '<' | '>' | ')' | ']' | '}')
+        .iter()
+        .position(|byte| {
+            byte.is_ascii_whitespace()
+                || matches!(byte, b'"' | b'\'' | b'`' | b'<' | b'>' | b')' | b']' | b'}')
         })
         .unwrap_or(tail.len());
 
     marker_index + end_offset
 }
 
-fn sanitize_url(raw_url: &str) -> String {
-    raw_url
-        .trim_matches(|character: char| {
-            character.is_whitespace()
-                || matches!(
-                    character,
-                    '"' | '\'' | '`' | '<' | '>' | ')' | ']' | '}' | ','
-                )
-        })
-        .to_string()
+fn sanitize_url(raw_url: &[u8]) -> String {
+    let trimmed = trim_url_bytes(raw_url);
+    String::from_utf8_lossy(trimmed).into_owned()
+}
+
+fn trim_url_bytes(raw_url: &[u8]) -> &[u8] {
+    let mut start = 0usize;
+    let mut end = raw_url.len();
+
+    while start < end && is_url_trim_byte(raw_url[start]) {
+        start += 1;
+    }
+
+    while end > start && is_url_trim_byte(raw_url[end - 1]) {
+        end -= 1;
+    }
+
+    &raw_url[start..end]
+}
+
+fn is_url_trim_byte(byte: u8) -> bool {
+    byte.is_ascii_whitespace()
+        || matches!(
+            byte,
+            b'"' | b'\'' | b'`' | b'<' | b'>' | b')' | b']' | b'}' | b',' | b'\r'
+        )
 }
 
 #[cfg(test)]
@@ -177,6 +214,22 @@ mod tests {
 
         let error = extract_latest_gacha_url_from_file(&path).expect_err("missing url should fail");
         assert!(error.to_string().contains("未找到抽卡记录 URL"));
+
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn extract_latest_gacha_url_from_file_should_ignore_invalid_utf8_bytes() {
+        let path = temp_log_file_path("invalid-utf8");
+        let mut bytes = vec![0xff, 0xfe, b'\n'];
+        bytes.extend_from_slice(format!("prefix {} suffix", sample_url("10000003")).as_bytes());
+        bytes.extend_from_slice(&[b'\n', 0x80, 0x81]);
+        fs::write(&path, bytes).expect("write temp log");
+
+        let result = extract_latest_gacha_url_from_file(&path).expect("extract should succeed");
+        assert_eq!(result.total_url_count, 1);
+        assert_eq!(result.latest.line_number, 2);
+        assert_eq!(result.latest.url, sample_url("10000003"));
 
         let _ = fs::remove_file(path);
     }
