@@ -355,18 +355,19 @@ async function queryPool(
 
 1. 用户配置游戏根目录
 2. 找到游戏日志文件
-3. 从日志中查找抽卡记录页面 URL
-4. 从 URL query 中解析请求参数
-5. 对每个卡池请求数据
-6. 和本地旧数据合并
-7. 保存 `pool.json` 和 `data.json`
+3. **解密**日志文件
+4. 从解密后的文本中查找抽卡记录页面 URL
+5. 从 URL query 中解析请求参数
+6. 对每个卡池请求数据
+7. 和本地旧数据合并
+8. 保存 `pool.json` 和 `data.json`
 
 伪代码：
 
 ```ts
 async function firstLoad(gameRootDir: string): Promise<void> {
   const logFile = findGameLogFile(gameRootDir);
-  const gachaUrl = extractGachaUrlFromLog(logFile);
+  const gachaUrl = extractGachaUrlFromLog(logFile); // 内部先解密再匹配
   const params = parseQueryParams(gachaUrl);
   const poolFile = await fetchAndMergeAllPools(params);
   savePlayerData(params.playerId, params, poolFile);
@@ -377,9 +378,64 @@ async function firstLoad(gameRootDir: string): Promise<void> {
 
 - 未配置游戏目录：提示用户设置游戏目录
 - 日志文件不存在：提示日志路径错误或游戏未生成日志
+- 日志解密失败：提示日志读取/解密异常
 - 日志中找不到抽卡 URL：提示用户先在游戏内打开抽卡记录页面
 
-参考项目从日志中匹配抽卡 URL 的规则：
+### 5.1.1 游戏日志文件路径
+
+参考项目把“游戏根目录”记为 `gameRootDir`，日志文件固定相对路径为：
+
+```text
+{gameRootDir}/Client/Saved/Logs/Client.log
+```
+
+实现要求：
+
+- `gameRootDir` 必须是包含 `Client/` 目录的那一层游戏根目录
+  - 常见特征：同层存在 `Wuthering Waves.exe`、`Client/`
+- 日志路径优先做成可配置相对路径，默认值使用上面的固定相对路径
+- 仅检查 `Client.log` 本身是否存在即可；不需要扫描整个 `Logs` 目录来找抽卡 URL
+
+> 来源：参考仓库 `leck995/WutheringWavesTool` 的 `GameResourcesManager.getGameLogFile()`。
+
+### 5.1.2 日志解密（关键，不可省略）
+
+当前版本游戏的 `Client.log` **不是明文**，不能直接按文本扫描 URL。
+
+正确实现必须以参考仓库 **`new-ui-dev` 分支** 的 `CardPoolGetUrlTask.decryptLog()` 为准：
+
+1. 以二进制方式读取整个日志文件
+2. 对每个字节 `b`（无符号 0~255）做 XOR 变换：
+   - 若 `((b & 0x0F) % 2) == 1`，则 `b = b ^ 0xA5`
+   - 否则 `b = b ^ 0xEF`
+3. 将变换后的字节按 **UTF-8** 解码为字符串
+4. 再在该字符串上匹配抽卡 URL
+
+伪代码：
+
+```ts
+function decryptLog(fileBytes: Uint8Array): string {
+  const out = new Uint8Array(fileBytes.length);
+
+  for (let i = 0; i < fileBytes.length; i++) {
+    const b = fileBytes[i] & 0xff;
+    out[i] = (b & 0x0f) % 2 === 1 ? b ^ 0xa5 : b ^ 0xef;
+  }
+
+  return new TextDecoder("utf-8").decode(out);
+}
+```
+
+注意：
+
+- **旧分支**（如直接 `FileReader` 读日志）对应的是历史明文日志方案，不能作为当前实现依据
+- 默认分支 / 旧 UI 分支里可能仍保留“直接读文本”的代码；抽卡 URL 提取应以 `new-ui-dev` 的解密逻辑为准
+- 解密是“整文件字节变换”，不是按行、也不是额外的 AES/RSA 之类算法
+- 若跳过解密直接扫原文，通常会得到“日志存在但找不到抽卡 URL”
+
+### 5.1.3 抽卡 URL 匹配规则
+
+参考项目从**解密后的日志文本**中匹配抽卡 URL 的规则：
 
 ```regex
 https.*/aki/gacha/index.html#/record[?=&\w\-]+
@@ -387,10 +443,29 @@ https.*/aki/gacha/index.html#/record[?=&\w\-]+
 
 实现要求：
 
-- 逐行扫描日志文件
+- 在解密后的完整文本上全局匹配（不要求先按行切分，但按行扫描也可以）
 - 收集所有匹配到的抽卡记录 URL
-- 使用最后一个匹配项作为最新可用 URL
+- 使用**最后一个**匹配项作为最新可用 URL
 - 从 `?` 后按 `&` 分割 query 参数，再按上一节的字段映射转换为请求体字段
+
+提取伪代码：
+
+```ts
+function extractGachaUrlFromLog(logFilePath: string): string | null {
+  const bytes = readFileBytes(logFilePath);
+  const text = decryptLog(bytes);
+  const pattern = /https.*\/aki\/gacha\/index\.html#\/record[?=&\w\-]+/g;
+
+  let lastMatch: string | null = null;
+  for (const match of text.matchAll(pattern)) {
+    lastMatch = match[0];
+  }
+  return lastMatch;
+}
+```
+
+> 来源：参考仓库 `new-ui-dev` 分支 `CardPoolGetUrlTask.getLogFileUrl()` / `decryptLog()`。  
+> 旧版 `LogFileUtil.getLogFileUrl()` 是明文逐行扫描，**不适用于当前加密日志**。
 
 ### 5.2 后续刷新
 
@@ -929,7 +1004,7 @@ interface ResourceItem {
 
 ```text
 gacha/
-  log-parser        # 从游戏日志提取抽卡 URL 和参数
+  log-parser        # 解密 Client.log，再提取抽卡 URL 和参数
   api-client        # 请求抽卡记录接口
   storage           # 读写 data/{playerId}/pool.json 和 data.json
   merger            # 合并新旧抽卡记录
@@ -959,7 +1034,7 @@ gacha/
 5. 实现新旧记录合并 `mergeRecords`
 6. 实现 `data.json` 参数缓存
 7. 实现抽卡接口请求和刷新
-8. 实现游戏日志 URL 提取
+8. 实现游戏日志解密与 URL 提取（以 `new-ui-dev` 为准）
 9. 实现资源同步和本地图片读取
 
 这样可以先完成离线分析，再接入网络获取。
@@ -976,6 +1051,7 @@ gacha/
 6. **图片不应在列表渲染时远程加载**，应预同步到本地。
 7. **`data.json` 很重要**，没有它就只能重新从游戏日志找抽卡 URL。
 8. **资源 ID 同时用于统计条目识别和图片路径映射**。
+9. **当前 `Client.log` 已加密**，日志 URL 提取必须先按 `new-ui-dev` 的字节 XOR 规则解密；旧分支“直接读明文日志”的方式不可用。
 
 ---
 
@@ -983,6 +1059,8 @@ gacha/
 
 以下 Java 文件只是本文档结论的来源，不是实现时必须阅读的依赖：
 
+- `CardPoolGetUrlTask.java`（**`new-ui-dev` 分支**）：`Client.log` 解密与抽卡 URL 提取
+- `GameResourcesManager.java`：游戏根目录 / 日志路径定位（`Client/Saved/Logs/Client.log`）
 - `CardPoolRequestTask.java`：抽卡接口请求、新旧数据合并、本地保存
 - `CardPoolAnalysisTask.java`：抽卡统计主算法
 - `CardInfo.java`：抽卡记录字段
@@ -995,3 +1073,5 @@ gacha/
 - `LocalResourcesManager.java`：本地图片路径规则
 - `MainViewModel.java`：应用启动时触发资源同步
 - `ResourcesSyncTask.java`：远程资源仓库同步逻辑
+
+> 说明：旧分支中的 `LogFileUtil.java` 属于明文日志时代的实现，**不能**作为当前加密日志的复现依据。

@@ -368,11 +368,18 @@ src/lib/types/dto.ts
 
 Rust：
 
-- `gacha_log/parser.rs`
-  - 根据配置找到日志文件
-  - 逐行扫描
-  - 用正则匹配抽卡 URL
+- `gacha_log/`
+  - 根据配置找到日志文件：`{gameRootDir}/Client/Saved/Logs/Client.log`
+  - **先按 `new-ui-dev` 规则整文件解密 `Client.log`**
+    - 对每个字节：`((b & 0x0F) % 2 == 1) ? b ^ 0xA5 : b ^ 0xEF`
+    - 再按 UTF-8 解码
+  - 在解密后的文本上用正则匹配抽卡 URL
   - 取最后一个匹配项
+
+说明：
+
+- 当前游戏日志已加密，不能再按旧分支的“直接读文本”方式实现
+- 实现与文档都以参考仓库 `new-ui-dev` 的 `CardPoolGetUrlTask` 为准
 
 #### 4.2 手动输入 URL
 
